@@ -8,22 +8,27 @@ import (
 	"log"
 )
 
-const THREAD_COUNT int = 1
+type MandelbrotConfig struct {
+    imageWidth, imageHeight, maxIterations, threadCount int
+    realCenter, imagCenter, realWidth float64
+}
+
 const ESCAPE_RADIUS float64 = 2.0
-const MAX_ITERATIONS = 1_000
-const IMAGE_WIDTH, IMAGE_HEIGHT = 800, 600
 
-// const CX, CY, WIDTH float64 = -0.5, 0.0, 2.5
-const CX, CY, WIDTH float64 = -0.7436447860, 0.1318252536, 0.0000029336
-// const CX, CY, WIDTH float64 = -0.743643135, 0.131825963, 0.000014628
-// const CX, CY, WIDTH float64 = -0.743643900055, 0.131825890901, 0.000000049304
+func inferRealBounds(c MandelbrotConfig) (realStart float64, realEnd float64) {
+    realStart = c.realCenter - 0.5 * c.realWidth
+    realEnd = c.realCenter + 0.5 * c.realWidth
 
-const HEIGHT float64 = (WIDTH * float64(IMAGE_HEIGHT)) / float64(IMAGE_WIDTH)
-const RE_START float64 = CX - 0.5 * WIDTH
-const RE_END float64 = CX + 0.5 * WIDTH
-const IM_START float64 = CY - 0.5 * HEIGHT
-const IM_END float64 = CY + 0.5 * HEIGHT
+    return
+}
 
+func inferImagBounds(c MandelbrotConfig) (imagStart float64, imagEnd float64) {
+    imagHeight := (c.realWidth * float64(c.imageHeight)) / float64(c.imageWidth)
+    imagStart = c.imagCenter - 0.5 * imagHeight
+    imagEnd = c.imagCenter + 0.5 * imagHeight
+
+    return
+}
 
 func computePixel(x0, y0 float64, maxIterations int) color.RGBA {
     var x, y float64 = 0.0, 0.0
@@ -48,26 +53,28 @@ func computePixel(x0, y0 float64, maxIterations int) color.RGBA {
     return color.RGBA{r, g, b, 255}
 }
 
-func generateMandelbrotSequentially(w io.Writer) error {
-    img := image.NewRGBA(image.Rect(0, 0, IMAGE_WIDTH, IMAGE_HEIGHT))
+func generateMandelbrotSequentially(w io.Writer, c MandelbrotConfig) error {
+    img := image.NewRGBA(image.Rect(0, 0, c.imageWidth, c.imageHeight))
+    realStart, realEnd := inferRealBounds(c)
+    imagStart, imagEnd := inferImagBounds(c)
 
-    for y := 0; y < IMAGE_HEIGHT; y++ {
-        y0 := float64(y) * ((IM_END - IM_START) / IMAGE_HEIGHT) + IM_START
+    for y := 0; y < img.Rect.Dy(); y++ {
+        y0 := float64(y) * ((imagEnd - imagStart) / float64(img.Rect.Dy())) + imagStart
 
-        for x := 0; x < IMAGE_WIDTH; x++ {
-            x0 := float64(x) * ((RE_END - RE_START) / IMAGE_WIDTH) + RE_START
-            c := computePixel(x0, y0, MAX_ITERATIONS)
+        for x := 0; x < img.Rect.Dx(); x++ {
+            x0 := float64(x) * ((realEnd - realStart) / float64(img.Rect.Dx())) + realStart
+            pix := computePixel(x0, y0, c.maxIterations)
 
-            img.Set(x, IMAGE_HEIGHT - y, c)
+            img.Set(x, img.Rect.Dy() - y, pix)
         }
     }
 
     return png.Encode(w, img)
 }
 
-func GenerateMandelbrot(w io.Writer) error {
-    if THREAD_COUNT == 1 {
-        return generateMandelbrotSequentially(w)
+func GenerateMandelbrot(w io.Writer, config MandelbrotConfig) error {
+    if config.threadCount == 1 {
+        return generateMandelbrotSequentially(w, config)
     } else {
         log.Fatal("unimplemented")
     }

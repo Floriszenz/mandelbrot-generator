@@ -11,7 +11,17 @@ func main() {
         log.Fatal(err)
     }
 
-    if err := GenerateMandelbrot(f); err != nil {
+    c := MandelbrotConfig {
+        imageWidth: 800,
+        imageHeight: 600,
+        maxIterations: 1_000,
+        threadCount: 1,
+        realCenter: -0.5,
+        imagCenter: 0,
+        realWidth: 2.5,
+    }
+
+    if err := GenerateMandelbrot(f, c); err != nil {
         f.Close()
         log.Fatal(err)
     }
