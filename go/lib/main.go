@@ -14,8 +14,8 @@ func main() {
     c := MandelbrotConfig {
         imageWidth: 800,
         imageHeight: 600,
-        maxIterations: 1_000,
-        threadCount: 1,
+        maxIterations: 10_000,
+        threadCount: 1000,
         realCenter: -0.5,
         imagCenter: 0,
         realWidth: 2.5,
