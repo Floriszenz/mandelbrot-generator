@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"io"
 	"log"
 	"net/http"
 
@@ -8,24 +10,30 @@ import (
 )
 
 func generateMandelbrot(w http.ResponseWriter, req *http.Request) {
-	c := mandelbrot.MandelbrotConfig{
-		ImageWidth:    800,
-		ImageHeight:   600,
-		MaxIterations: 10_000,
-		ThreadCount:   1000,
-		RealCenter:    -0.5,
-		ImagCenter:    0,
-		RealWidth:     2.5,
+	rawBody, err := io.ReadAll(req.Body)
+
+	if err != nil {
+		http.Error(w, "Error reading request body", http.StatusInternalServerError)
+		return
 	}
 
-	if err := mandelbrot.GenerateMandelbrot(w, c); err != nil {
+	var body mandelbrot.MandelbrotConfig
+
+	if err := json.Unmarshal(rawBody, &body); err != nil {
+		http.Error(w, "Error decoding JSON", http.StatusBadRequest)
+		return
+	}
+
+	if err := mandelbrot.GenerateMandelbrot(w, body); err != nil {
+		http.Error(w, "Error while generating the mandelbrot image", http.StatusInternalServerError)
 		log.Fatal(err)
+		return
 	}
 
 }
 
 func main() {
-	http.HandleFunc("/generateMandelbrot", generateMandelbrot)
+	http.HandleFunc("POST /generateMandelbrot", generateMandelbrot)
 
 	http.ListenAndServe(":42069", nil)
 }
