@@ -1,6 +1,6 @@
 module github.com/Floriszenz/mandelbrot-generator/go/server-native
 
-go 1.21.4
+go 1.22.2
 
 replace github.com/Floriszenz/mandelbrot-generator/go/lib => ../lib
 
