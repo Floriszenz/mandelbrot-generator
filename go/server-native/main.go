@@ -9,7 +9,18 @@ import (
 	mandelbrot "github.com/Floriszenz/mandelbrot-generator/go/lib"
 )
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
+func handleOptionsRequest(w http.ResponseWriter, req *http.Request) {
+	enableCors(&w)
+	w.Header().Set("Access-Control-Allow-Methods", "POST")
+}
+
 func generateMandelbrot(w http.ResponseWriter, req *http.Request) {
+	enableCors(&w)
+
 	rawBody, err := io.ReadAll(req.Body)
 
 	if err != nil {
@@ -34,6 +45,7 @@ func generateMandelbrot(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	http.HandleFunc("POST /generateMandelbrot", generateMandelbrot)
+	http.HandleFunc("OPTIONS /generateMandelbrot", handleOptionsRequest)
 
 	http.ListenAndServe(":42069", nil)
 }
